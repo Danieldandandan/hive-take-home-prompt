@@ -16,7 +16,7 @@ function App() {
   const [multipleSelectValue, setMultipleSelectValue] = React.useState([
     "Option A",
   ]);
-
+  const [selectValue, setSelectValue] = React.useState(objOptions[0]);
   return (
     <div>
       <h1> Take Home Prompt From Daniel Chu</h1>
@@ -54,8 +54,9 @@ function App() {
         <div className="display-box">
           <h3> dropdown with object option: </h3>
           <Dropdown
-            value={objOptions[0]}
+            value={selectValue}
             onChange={(value) => {
+              setSelectValue(value);
               if (value) {
                 alert(
                   `Selected: \n key: ${value.key}, \n value: ${value.value}`
