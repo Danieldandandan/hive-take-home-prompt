@@ -64,13 +64,7 @@ function App() {
               }
               alert("No option selected");
             }}
-            options={[
-              { key: "Option A", value: "A" },
-              { key: "Option B", value: "B" },
-              { key: "Option C", value: "C" },
-              { key: "Option D", value: "D" },
-              { key: "Option E", value: "E" },
-            ]}
+            options={objOptions}
             getKey={(option) => option.key}
             getValue={(option) => option.value}
           />
