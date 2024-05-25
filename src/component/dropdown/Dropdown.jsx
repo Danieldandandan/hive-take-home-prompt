@@ -2,6 +2,8 @@ import "./Dropdown.css";
 import React, { useEffect, useState, useMemo } from "react";
 import PropTypes from "prop-types";
 
+const DEFAULT_MAX_HEIGHT = 200;
+
 const propTypes = {
   // T[], which means it can be an array of any type
   // the options to be displayed in the dropdown
@@ -12,9 +14,9 @@ const propTypes = {
   value: PropTypes.any,
 
   // boolean, flag to indicate if the dropdown is multi-select
-  isMultiSelect: PropTypes.bool,
+  multiSelect: PropTypes.bool,
 
-  // (value: T | T[]) => void
+  // (value: any | any[]) => void
   // the callback function to be called when the selected option changes
   onChange: PropTypes.func,
 
@@ -26,6 +28,7 @@ const propTypes = {
   // (option: T) => string
   // a function to get the value of the option
   // the value will be returned when the option is selected
+  // A Value should be UNIQUE for each option
   getValue: PropTypes.func,
 
   // number (default 200) (unit px)
@@ -37,29 +40,56 @@ const propTypes = {
   searchable: PropTypes.bool,
 };
 
+/**
+ * A custom dropdown component.
+ *
+ * @param {Object} props - The component props.
+ * @param {Array<T>} props.options - The options to be displayed in the dropdown.
+ * @param {T | T[]} props.value - The value of the selected option(s). T if single select, T[] if multi-select.
+ * @param {boolean} props.multiSelect - Flag to indicate if the dropdown is multi-select.
+ * @param {(T | T[]) => void} props.onChange - The callback function to be called when the selected option(s) change.
+ * @param {(T) => string} props.getKey - A function to get the key of the option.
+ * @param {(T) => string} props.getValue - A function to get the value of the option. ASSUMMING VALUE IS UNIQUE
+ * @param {number} props.maxHeight - The max height of the dropdown menu. (unit px)
+ * @param {boolean} props.searchable - Flag to indicate if the dropdown is searchable.
+ * @param {Object} otherProps - The custom props for developer to pass to the dropdown component. like className, style, etc.
+ * @returns {JSX.Element} The dropdown component.
+ */
 const Dropdown = ({
   options = [],
   value,
-  isMultiSelect = false,
+  multiSelect = false,
   onChange = () => {},
   getKey = (option) => option,
   getValue = (option) => option,
-  maxHeight = 200,
+  maxHeight = DEFAULT_MAX_HEIGHT,
   searchable = false,
   ...props
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState(
-    isMultiSelect ? [] : undefined
+    multiSelect ? [] : undefined
   );
   const [searchText, setSearchText] = useState("");
 
   // when switching between single and multi-select dropdown
-  // will clear the selected options.
+  // will clear the selected options
   useEffect(() => {
-    setSelectedOptions(isMultiSelect ? [] : undefined);
-  }, [isMultiSelect]);
+    setSelectedOptions(multiSelect ? [] : undefined);
+  }, [multiSelect]);
 
+  // a memoized function to check if an option is selected
+  const isSelected = useMemo(
+    () => (selected, option) => {
+      if (!selected) return false;
+      if (multiSelect)
+        return selected.map((opt) => getValue(opt)).includes(getValue(option));
+      return getValue(selected) === getValue(option);
+    },
+    [getValue, multiSelect]
+  );
+
+  // set the selected options when the value prop changes
   useEffect(() => {
     if (!value) return;
     setSelectedOptions(value);
@@ -67,6 +97,7 @@ const Dropdown = ({
 
   const toggleDropdown = () => setIsOpen(!isOpen);
 
+  // filter the options based on the search text
   const filteredOptions = useMemo(() => {
     if (!searchable) return options;
     return options.filter((option) =>
@@ -74,22 +105,28 @@ const Dropdown = ({
     );
   }, [getKey, options, searchText, searchable]);
 
+  // handle the option click
   const handleOptionClick = (option) => {
-    if (isMultiSelect) {
-      const newSelectedOptions = selectedOptions.includes(option)
-        ? selectedOptions.filter((o) => o !== option)
-        : [...selectedOptions, option];
-      setSelectedOptions(newSelectedOptions);
-      onChange(newSelectedOptions);
-    } else {
-      setSelectedOptions([option]);
+    if (!multiSelect) {
+      setSelectedOptions(option);
       onChange(option);
       setIsOpen(false);
+      return;
+    }
+    if (selectedOptions.includes(option)) {
+      const selected = selectedOptions.filter((o) => o !== option);
+      setSelectedOptions(selected);
+      onChange(selected);
+    } else {
+      console.log("selectedOptions", selectedOptions);
+      setSelectedOptions([...selectedOptions, option]);
+      onChange([...selectedOptions, option]);
     }
   };
 
   const handleSelectAll = () => {
-    if (!isMultiSelect) {
+    // assuming that user can not sleect all if it is not multi-select
+    if (!multiSelect) {
       alert("Select All is only available for multi-select");
       setIsOpen(false);
       return;
@@ -100,26 +137,42 @@ const Dropdown = ({
   };
 
   const handleDeselectAll = () => {
-    setSelectedOptions([]);
-    onChange([]);
+    const selectValue = multiSelect ? [] : undefined;
+    setSelectedOptions(selectValue);
+    onChange(selectValue);
     setIsOpen(false);
   };
 
-  const handleSearchTextChange = (e) => setSearchText(e.target.value);
+  // if the dropdown is controlled, use the value prop
+  // otherwise, use the selectedOptions state
+  const selected = useMemo(() => {
+    return value ? value : selectedOptions;
+  }, [value, selectedOptions]);
 
+  const handleSearchTextChange = (e) => setSearchText(e.target.value);
   return (
     <div className="dropdown" {...props}>
-      <div className="dropdown-header" onClick={toggleDropdown}>
-        <div className="selected-options">
-          {selectedOptions &&
-            selectedOptions.map((option) => (
-              <div
-                className="selected-option"
-                key={`options-${getValue(option)}`}
-              >
-                {option}
-              </div>
-            ))}
+      <div
+        data-testid="dropdown-header"
+        className="dropdown-header"
+        onClick={toggleDropdown}
+      >
+        <div data-testid="selected-options" className="selected-options">
+          {multiSelect ? (
+            <>
+              {selected &&
+                selected.map((option) => (
+                  <div
+                    className="selected-option"
+                    key={`options-${getKey(option)}`}
+                  >
+                    {getKey(option)}
+                  </div>
+                ))}
+            </>
+          ) : (
+            <div> {selected && getKey(selected)} </div>
+          )}
         </div>
         <span className="dropdown-arrow">{isOpen ? "▲" : "▼"}</span>
       </div>
@@ -128,6 +181,7 @@ const Dropdown = ({
           {searchable && (
             <div className="dropdown-tools">
               <input
+                data-testid="dropdown-search"
                 className="dropdown-search"
                 value={searchText}
                 placeholder="Please Search..."
@@ -154,11 +208,9 @@ const Dropdown = ({
               <div
                 key={`option-items-${getValue(option)}`}
                 className={`dropdown-item ${
-                  selectedOptions && selectedOptions.includes(getValue(option))
-                    ? "selected"
-                    : ""
+                  isSelected(selected, option) ? "selected" : ""
                 }`}
-                onClick={() => handleOptionClick(getValue(option))}
+                onClick={() => handleOptionClick(option)}
               >
                 {getKey(option)}
               </div>

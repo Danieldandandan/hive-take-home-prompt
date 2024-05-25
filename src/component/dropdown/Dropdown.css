@@ -4,7 +4,7 @@
     border-radius: 0.25rem;
     border: 1px solid #ccc;
     user-select: none;
-  }
+}
   
 .dropdown-top {
   display: flex;
@@ -78,6 +78,8 @@
   gap: .5rem;
   width: 100%;
   text-overflow: ellipsis;
+  max-height: 20rem;
+  overflow-y: auto;
 }
 
 .selected-option {

@@ -1,8 +1,7 @@
-import { render, screen } from '@testing-library/react';
-import App from './App';
-
-test('renders learn react link', () => {
+import { render, screen } from "@testing-library/react";
+import App from "./App";
+test("title is displayed in the screen", async () => {
   render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+  const title = await screen.findByText("Take Home Prompt From Daniel Chu");
+  expect(title).toBeInTheDocument();
 });

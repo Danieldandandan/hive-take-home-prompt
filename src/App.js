@@ -1,16 +1,31 @@
 import "./App.css";
-import Dropdown from "./component/select/Dropdown";
+import Dropdown from "./component/dropdown/Dropdown";
 import React from "react";
 
+const longOptions = Array.from({ length: 1000 }, (_, i) => `Option ${i + 1}`);
+
+const objOptions = [
+  { key: "Option A", value: "A" },
+  { key: "Option B", value: "B" },
+  { key: "Option C", value: "C" },
+  { key: "Option D", value: "D" },
+  { key: "Option E", value: "E" },
+];
 function App() {
-  const longOptions = Array.from({ length: 1000 }, (_, i) => `Option ${i + 1}`);
+  const [singleSelectValue, setSingleSelectValue] = React.useState();
+  const [multipleSelectValue, setMultipleSelectValue] = React.useState([
+    "Option A",
+  ]);
+
   return (
     <div>
       <h1> Take Home Prompt From Daniel Chu</h1>
       <div className="display-container">
         <div className="display-box">
-          <h3> single select dropdown: </h3>
+          <h3> Basic single select dropdown: </h3>
           <Dropdown
+            value={singleSelectValue}
+            onChange={(value) => setSingleSelectValue(value)}
             options={[
               "Option 1",
               "Option 2",
@@ -23,7 +38,9 @@ function App() {
         <div className="display-box">
           <h3> multiple select dropdown: </h3>
           <Dropdown
-            isMultiSelect={true}
+            multiSelect
+            value={multipleSelectValue}
+            onChange={(value) => setMultipleSelectValue(value)}
             options={[
               "Option A",
               "Option B",
@@ -35,8 +52,18 @@ function App() {
           />
         </div>
         <div className="display-box">
-          <h3> select with object option: </h3>
+          <h3> dropdown with object option: </h3>
           <Dropdown
+            value={objOptions[0]}
+            onChange={(value) => {
+              if (value) {
+                alert(
+                  `Selected: \n key: ${value.key}, \n value: ${value.value}`
+                );
+                return;
+              }
+              alert("No option selected");
+            }}
             options={[
               { key: "Option A", value: "A" },
               { key: "Option B", value: "B" },
@@ -49,12 +76,17 @@ function App() {
           />
         </div>
         <div className="display-box">
-          <h3> select with 1000 options: </h3>
+          <h3> dropdown with with 1000 options: </h3>
           <Dropdown options={longOptions} />
         </div>
         <div className="display-box">
-          <h3> select with 1000 options and searchable: </h3>
-          <Dropdown options={longOptions} searchable={true} maxHeight={300} />
+          <h3> dropdown with 1000 options and searchable and custom height:</h3>
+          <Dropdown
+            multiSelect
+            options={longOptions}
+            searchable={true}
+            maxHeight={400}
+          />
         </div>
       </div>
     </div>
