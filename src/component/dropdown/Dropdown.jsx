@@ -118,7 +118,6 @@ const Dropdown = ({
       setSelectedOptions(selected);
       onChange(selected);
     } else {
-      console.log("selectedOptions", selectedOptions);
       setSelectedOptions([...selectedOptions, option]);
       onChange([...selectedOptions, option]);
     }
